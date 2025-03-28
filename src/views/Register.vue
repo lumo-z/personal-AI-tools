@@ -16,10 +16,6 @@
       <el-form-item label="邮箱" prop="email">
         <el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
       </el-form-item>
-      <el-form-item label="验证码" prop="captcha">
-        <el-input v-model="form.captcha" placeholder="请输入验证码"></el-input>
-        <el-button type="primary" @click="handleSubmit">获取验证码</el-button>
-      </el-form-item>
       <el-form-item label="协议" prop="agreement">
         <el-checkbox v-model="form.agreement">我已阅读并同意用户协议</el-checkbox>
       </el-form-item>
