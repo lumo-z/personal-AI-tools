@@ -1,24 +1,89 @@
-# vue2_demo
 
-## Project setup
-```
-npm install
+### **项目名称：智能个人知识库管理系统（Smart Personal Knowledge Base）**
+**一句话需求**：基于本地大模型构建一个私有化、支持自然语言交互的智能知识管理系统，帮助用户高效整理、检索和延展个人文档/笔记。
+
+---
+
+#### **一、核心价值**
+1. **隐私安全**：数据完全本地处理，无需上传云端  
+2. **自然交互**：用对话方式管理文档（如"帮我找上个月读的AI论文中关于RAG优化的内容"）
+3. **知识延展**：AI自动关联碎片信息，生成知识图谱或总结报告
+4. **轻量易用**：学生/研究者友好型工具，无需复杂配置
+
+---
+
+#### **二、功能模块设计**
+**1. 知识采集层**
+- 支持导入多种格式（PDF/Word/Markdown/网页剪藏）
+- 自动解析文本内容，提取关键词/摘要
+- 调用DeepSeek生成文档标签建议（如"这篇论文可能属于#机器学习-#模型优化分类"）
+
+**2. 智能检索层**
+- 自然语言搜索："找出所有提到LoRA技术且超过5页的PDF"
+- 语义相似度匹配（用sentence-transformers生成向量）
+- 结果可视化：时间线视图、知识图谱展示关联文档
+
+**3. 交互增强层**
+- 对话式问答："用表格对比这三篇论文的创新点"
+- 自动生成文档摘要（可指定长度/风格）
+- 内容联想："根据我的笔记，推荐相关开源项目"
+
+**4. 扩展功能**
+- 定时自动整理文档库
+- 浏览器插件快速收藏内容
+- 生成周报/学习路线建议
+
+---
+
+#### **三、技术实现路径**
+```mermaid
+graph LR
+A[前端]-->B[FastAPI后端]
+B-->C[向量数据库(Chroma)]
+B-->D[Ollama(DeepSeek R1)]
+C-->E[文档解析器(pypdf/unstructured)]
+D-->F[Embedding模型(sentence-transformers)]
 ```
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+**关键技术点**：
+1. 文档处理：用LangChain的文档加载器解析多格式文件
+2. 语义检索：HuggingFace的all-MiniLM-L6-v2生成文本向量
+3. 本地部署：通过Ollama的API接口调用DeepSeek模型
+4. 轻量存储：使用SQLite+ChromaDB实现混合存储（元数据+向量）
 
-### Compiles and minifies for production
-```
-npm run build
-```
+---
 
-### Lints and fixes files
-```
-npm run lint
-```
+#### **四、开发里程碑**
+**阶段一（2周）**：MVP版本
+- 实现PDF文本解析与基础搜索
+- 完成"用自然语言查文档"核心交互
+- 搭建基础Web界面（Streamlit/Vue）
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+**阶段二（1周）**：增强检索
+- 接入sentence-transformers生成嵌入
+- 实现语义相似度排序
+- 添加结果高亮显示
+
+**阶段三（1周）**：AI增强
+- 集成DeepSeek的总结/问答功能
+- 实现"相关推荐"功能
+- 添加自动标签生成
+
+---
+
+#### **五、差异化亮点**
+1. **隐私优先设计**：相比Notion/Obsidian的云端方案，完全本地运行
+2. **低成本知识图谱**：用向量检索+大模型替代传统NebulaGraph等复杂方案
+3. **渐进式学习**：系统会记录用户的搜索/阅读偏好，自动优化排序策略
+
+---
+
+#### **六、扩展空间**
+1. 添加Zotero/Notion API对接
+2. 实现移动端语音交互
+3. 开发VS Code插件版本
+4. 集成RAG实现联网知识增强
+
+---
+
+这个项目既能锻炼全栈开发能力（前端+后端+AI集成），又具有实际应用场景。建议从最简单的命令行版本开始原型验证，逐步迭代功能。过程中需要特别注意文档解析的兼容性和长文本处理的性能优化。
