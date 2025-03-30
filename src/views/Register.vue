@@ -1,6 +1,6 @@
 <template>
   <div class="register">
-    <el-form>
+    <el-form :model="form" :rules="rules" ref="registerForm">
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
       </el-form-item>
@@ -18,7 +18,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSubmit">注册</el-button>
-        <el-span @click="login">已有账户？去登录</el-span>
+        <span @click="login">已有账户？去登录</span>
       </el-form-item>
     </el-form>
   </div>
@@ -50,18 +50,17 @@ export default {
           { min: 6, max: 12, message: '密码长度不能少于6位,不能多于12位', trigger: 'blur' }
         ],
         confirmPassword: [
-          { required: true, message: '请再次输入密码', trigger: 'blur' },
           {
+            required: true,
+            message: '请再次输入密码',
+            trigger: 'blur',
             validator: (value, callback) => {
               if (value !== this.form.password) {
                 callback(new Error('两次输入密码不一致'))
-              } else if (this.form.password.length < 6 || this.form.password.length > 12) {
+              } else if (this.form.confirmPassword.length < 6 || this.form.confirmPassword.length > 12) {
                 callback(new Error('密码长度不能少于6位,不能多于12位'))
-              } else {
-                callback()
               }
-            },
-            trigger: 'blur'
+            }
           }
         ]
       }

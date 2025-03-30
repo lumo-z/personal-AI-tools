@@ -1,7 +1,5 @@
 <template>
   <div id="app">
-    <el-header>
-    </el-header>
     <el-container>
       <el-aside style="border-radius: 5%;">
         <el-row class="tac">
