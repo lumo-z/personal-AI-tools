@@ -16,17 +16,16 @@
       <el-form-item label="邮箱" prop="email">
         <el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
       </el-form-item>
-      <el-form-item label="协议" prop="agreement">
-        <el-checkbox v-model="form.agreement">我已阅读并同意用户协议</el-checkbox>
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSubmit">注册</el-button>
+        <el-span @click="login">已有账户？去登录</el-span>
       </el-form-item>
     </el-form>
   </div>
 </template>
 
 <script>
+import { registerApi } from '@/api/user'
 export default {
   name: 'Register',
   data () {
@@ -53,9 +52,11 @@ export default {
         confirmPassword: [
           { required: true, message: '请再次输入密码', trigger: 'blur' },
           {
-            validator: (rule, value, callback) => {
+            validator: (value, callback) => {
               if (value !== this.form.password) {
                 callback(new Error('两次输入密码不一致'))
+              } else if (this.form.password.length < 6 || this.form.password.length > 12) {
+                callback(new Error('密码长度不能少于6位,不能多于12位'))
               } else {
                 callback()
               }
@@ -68,10 +69,17 @@ export default {
   },
   methods: {
     handleSubmit () {
-      console.log('Register form submitted:', this.form)
+      const response = registerApi(this.form)
+      if (response.status === 200) {
+        this.$message.success('注册成功')
+        this.$router.push({ path: '/login' })
+      }
     },
     handleCaptcha () {
       console.log('Captcha sent to:', this.form.phone)
+    },
+    login () {
+      this.$router.push({ path: '/' })
     }
   }
 }

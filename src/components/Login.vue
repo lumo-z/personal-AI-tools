@@ -20,7 +20,7 @@
         </el-form-item>
       </el-form>
       <el-span class="register">
-        没有账号？<el-link to ="/register">注册</el-link>
+        没有账号？<router-link to ="/register">注册</router-link>
       </el-span>
       <!-- 弹窗底部按钮 -->
       <span slot="footer" class="dialog-footer">
