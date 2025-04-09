@@ -54,11 +54,13 @@ export default {
             required: true,
             message: '请再次输入密码',
             trigger: 'blur',
-            validator: (value, callback) => {
-              if (value !== this.form.password) {
+            validator: (rule, value, callback) => {
+              if (value === '') {
+                callback(new Error('请再次输入密码'))
+              } else if (value !== this.form.password) {
                 callback(new Error('两次输入密码不一致'))
-              } else if (this.form.confirmPassword.length < 6 || this.form.confirmPassword.length > 12) {
-                callback(new Error('密码长度不能少于6位,不能多于12位'))
+              } else {
+                callback()
               }
             }
           }
@@ -67,12 +69,22 @@ export default {
     }
   },
   methods: {
-    handleSubmit () {
-      const response = registerApi(this.form)
-      if (response.status === 200) {
-        this.$message.success('注册成功')
-        this.$router.push({ path: '/login' })
-      }
+    async handleSubmit () {
+      this.$refs.registerForm.validate(async (valid) => {
+        if (!valid) {
+          this.$message.error('请检查表单填写是否正确')
+          return
+        }
+        try {
+          const response = await registerApi(this.form)
+          if (response.status === 200) {
+            this.$message.success('注册成功')
+            this.$router.push({ path: '/login' })
+          }
+        } catch (error) {
+          this.$message.error('注册失败: ' + (error.response?.data?.message || error.message))
+        }
+      })
     },
     handleCaptcha () {
       console.log('Captcha sent to:', this.form.phone)

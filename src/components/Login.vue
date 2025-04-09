@@ -19,9 +19,9 @@
           <el-input type="password" v-model="form.password" placeholder="请输入密码"></el-input>
         </el-form-item>
       </el-form>
-      <el-span class="register">
+      <span class="register">
         没有账号？<router-link to ="/register">注册</router-link>
-      </el-span>
+      </span>
       <!-- 弹窗底部按钮 -->
       <span slot="footer" class="dialog-footer">
         <el-button @click="handleClose">取消</el-button>
@@ -68,8 +68,10 @@ export default {
     async handleSubmit () {
       try {
         const valid = await this.$refs.loginForm.validate()
-        if (!valid) return
-
+        if (!valid) {
+          console.log(valid)
+          return
+        }
         const { success, user, error } = await this.$store.dispatch(
           'user/login',
           this.form
@@ -77,7 +79,7 @@ export default {
 
         if (success) {
           this.$message.success(`欢迎回来，${user.username}`)
-          this.$router.push('/')
+          this.$router.go(0)
         } else {
           this.handleClose()
           this.$message.error(error)

@@ -1,11 +1,11 @@
 import requests
-from typing import Optional
+from typing import Optional,Generator
 
 OLLAMA_BASE_URL = "http://localhost:11434/api"
 
 def ask_ai(prompt: str, 
-          model: str = "deepseek-chat",
-          max_tokens: Optional[int] = 2000) -> str:
+          model: str = "deepseek-r1:7b",
+          max_tokens: Optional[int] = 2000) -> Generator[str, None, None]:
     """
     调用Ollama本地API生成文本
     参数：
@@ -21,19 +21,18 @@ def ask_ai(prompt: str,
             json={
                 "model": model,
                 "prompt": prompt,
-                "stream": False,
+                "stream": True,
                 "options": {
                     "max_tokens": max_tokens,
                     "temperature": 0.7
                 }
             },
-            timeout=30
+            stream=True
         )
-        
-        if response.status_code == 200:
-            return response.json().get("response", "").strip()
-        else:
-            return f"请求失败，错误码：{response.status_code}"
+        for line in response.iter_lines():
+            if line:
+                chunk = json.loads(line.decode('utf-8'))
+                yield chunk.get("response", "")
             
     except Exception as e:
         return f"连接Ollama服务失败：{str(e)}"

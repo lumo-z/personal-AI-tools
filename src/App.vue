@@ -28,7 +28,7 @@
             </el-menu-item>
             <el-menu-item index="4">
               <i class="el-icon-setting"></i>
-              <span slot="title">暂时没想好</span>
+              <span slot="title">个人中心</span>
             </el-menu-item>
           </el-menu>
         </el-col>
