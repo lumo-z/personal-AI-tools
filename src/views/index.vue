@@ -1,10 +1,19 @@
 <template>
-  <div class="main">
-    <h1>这里存放主要交互界面</h1>
-    <div class="loginbutton" v-if="!isAuthenticated">
-      <loginbutton></loginbutton>
-    </div>
-    <div class="ask" v-else>
+  <el-container class="main">
+      <el-aside width="200px" style="height: auto;">
+        <h1>历史纪录：</h1>
+        <ul v-if="history">
+          <li v-for="item in history" :key="item.id">
+            <el-button type="text" @click="handleHistoryClick(item)">
+              {{ item.title }}
+            </el-button>
+          </li>
+        </ul>
+        <div v-else>
+          暂无历史记录
+        </div>
+      </el-aside>
+    <el-container>
       <el-main class="chat-area">
         <div class="message-list" ref="messageList">
           <div
@@ -19,7 +28,7 @@
               <div v-if="message.think" class="think-content">
                 <i class="el-icon-info"></i> 思考过程: {{ message.think }}
               </div>
-              <div class="message-text" v-html="message.text"></div>
+              <div class="message-text" v-html="marked(message.text)"></div>
               <div class="message-time">{{ formatTime(message.time) }}</div>
             </div>
           </div>
@@ -36,8 +45,11 @@
         </div>
       </el-main>
 
-      <el-footer class="input-area">
-        <div class="input-container">
+      <el-footer class="input-area" style="height: auto;">
+        <div class="loginbutton" v-if="!isAuthenticated">
+          <loginbutton></loginbutton>
+        </div>
+        <div class="input-container" v-else>
           <el-input
             v-model="ask"
             placeholder="请输入你的问题"
@@ -57,23 +69,23 @@
             发送
           </el-button>
         </div>
-        <div class="tips">
-          <span>提示:按Enter发送,Shift+Enter换行</span>
-        </div>
       </el-footer>
-    </div>
-  </div>
+    </el-container>
+  </el-container>
 </template>
 
 <script>
 import loginbutton from '@/components/Login.vue'
-// import { askApi } from '@/api/ask'
+import { GetDetailHistoryApi, GetHistoryApi } from '@/api/history'
 import { mapGetters } from 'vuex'
+import { marked } from 'marked'
+import _ from 'lodash'
 export default {
   name: 'Index',
   data () {
     return {
       ask: '',
+      history: [],
       messages: [],
       isLoading: false,
       userAvatar: require('@/assets/user.jpg'),
@@ -90,7 +102,7 @@ export default {
     async handleSubmit () {
       if (!this.isAuthenticated) return this.$message.warning('请先登录')
       if (!this.ask.trim()) return
-
+      const question = this.ask.trim()
       // 添加消息
       this.messages.push(
         { sender: 'user', text: this.ask, time: new Date() },
@@ -102,14 +114,30 @@ export default {
       let eventSource = null
       try {
         const BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000'
-
-        // 修改handleSubmit中的URL
-        eventSource = new EventSource(`${BASE_URL}/api/ask/sse?question=${encodeURIComponent(this.ask)}&t=${Date.now()}`)
+        const url = new URL(`${BASE_URL}/api/ask/sse`)
+        url.searchParams.append('question', encodeURIComponent(question))
+        url.searchParams.append('t', Date.now()) // 防止缓存
+        eventSource = new EventSource(url.toString(), {
+          withCredentials: true
+        })
 
         const handlers = {
           status: e => {
             if (JSON.parse(e.data).status === 'end') {
               eventSource.close()
+              // const data = {
+              //   user_id: this.$store.state.user.user.id,
+              //   session_id: this.generateSessionId(),
+              //   question: question,
+              //   answer: '<think>' + aiMsg.think + '<think>' + '<answer>' + aiMsg.text + '<answer>',
+              //   timestamp: new Date().getTime()
+              // }
+              // SaveHistoryApi(data).then(res => {
+              //   console.log(res.data.message)
+              // }).catch(err => {
+              //   console.log(err)
+              //   this.$message.error('保存历史记录失败')
+              // })
               this.isLoading = false
             }
           },
@@ -118,6 +146,7 @@ export default {
             this.scrollToBottom()
           },
           message: e => {
+            console.log(e.data)
             this.$set(aiMsg, 'text', aiMsg.text + JSON.parse(e.data).content)
             this.scrollToBottom()
           },
@@ -140,7 +169,7 @@ export default {
         }
       } catch (err) {
         console.error(err)
-        this.$message.error('请求失败')
+        this.$message.error('请求出错')
         if (eventSource) eventSource.close()
       } finally {
         this.ask = ''
@@ -153,12 +182,14 @@ export default {
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${hours}:${minutes}`
     },
-    scrollToBottom () {
+    scrollToBottom: _.debounce(function () {
       this.$nextTick(() => {
-        const container = this.$refs.messageList
-        container.scrollTop = container.scrollHeight
+        this.$refs.chatContainer?.scrollTo({
+          top: this.$refs.chatContainer.scrollHeight,
+          behavior: 'smooth'
+        })
       })
-    },
+    }, 100),
     handleInput (event) {
       if (!event.shiftKey) {
         this.handleSubmit()
@@ -166,6 +197,59 @@ export default {
     },
     handleKeydown () {
       this.ask += '\n'
+    },
+    async getHistory () {
+      const userId = this.$store.state.user.user.id
+      const history = await GetHistoryApi(userId).then(res => {
+        return res.data.data
+      }).catch(err => {
+        console.error(err)
+        this.$message.error('获取历史记录失败')
+        return []
+      })
+      return history
+    },
+    async handleHistoryClick (item) {
+      // 处理历史记录点击事件，将问题内容赋值给 currentQuestion
+      const data = GetDetailHistoryApi({
+        userId: item.id,
+        sessionId: item.session
+      }).then(res => {
+        return res.data.data
+      }).catch(err => {
+        console.error(err)
+        this.$message.error('获取历史记录失败')
+        return []
+      })
+      this.messages = data.records.flatMap(item => {
+        return [
+          {
+            sender: 'user',
+            text: item.question,
+            time: new Date(item.timestamp)
+          },
+          {
+            sender: 'ai',
+            text: item.answer,
+            time: new Date(item.timestamp)
+          }
+        ]
+      })
+    },
+    generateSessionId () {
+    // 获取当前时间的时间戳（毫秒级）
+      const timestamp = new Date().getTime()
+
+      // 生成一个随机数（0到1之间的浮点数，然后放大并取整）
+      const randomNum = Math.floor(Math.random() * 1000000)
+
+      // 将时间戳和随机数组合在一起
+      const sessionId = `${timestamp}-${randomNum}`
+
+      return sessionId
+    },
+    marked (text) {
+      return marked(text)
     }
   }
 }
@@ -173,67 +257,113 @@ export default {
 
 <style lang="less" scoped>
 .main {
-  width: 100%;
   height: 100vh;
-  display: flex;
-  flex-direction: column;
+  .el-aside {
+    border-right: 1px solid #e6e6e6;
+    padding: 20px;
+  }
+    .el-container {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      .chat-area {
+      padding: 20px,0px;
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+    }
+     .el-footer {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      .input-area {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #eee;
+      .input-container {
+        width: 100%;
+        .el-input {
+        margin-top: 10px;
+        width: 100%;
+        height: auto;
+       }
+      }
+      .submit-btn {
+        margin-top: 10px;
+        margin-left: 200px;
+       }
+    }
+     }
+  }
 }
-
-.chat-area {
-  flex: 1;
+/* 修改消息区域样式 */
+.message-list {
+  height: 80%;
   overflow-y: auto;
   padding: 20px;
-}
-
-.message-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
 .message-item {
   display: flex;
-  gap: 15px;
-
+  margin-bottom: 20px;
   &.user {
-    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+  &.ai {
+    justify-content: flex-start;
   }
 }
 
 .message-content {
   max-width: 70%;
-  .think-content {
-    color: #999;
-    font-size: 14px;
-    margin-bottom: 5px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  .message-item.user & {
+    background-color: #e3f2fd;
   }
+  .message-item.ai & {
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+}
+
+/* 新增思考内容样式 */
+.think-content {
+  font-size: 14px;
+  color: #999;  /* 淡灰色字体 */
+  font-style: italic;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #ddd;
+  border-radius: 4px;
 }
 
 .message-text {
-  padding: 10px 15px;
-  border-radius: 8px;
-
-  .user & {
-    background: #409EFF;
-    color: white;
+  line-height: 1.6;
+  word-break: break-word;
+  /* 保留原有markdown样式 */
+  & /deep/ p {
+    margin: 0 0 10px;
   }
-
-  .ai & {
-    background: #f5f5f5;
+  & /deep/ code {
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
   }
-}
-
-.input-area {
-  padding: 15px;
-  border-top: 1px solid #eee;
-}
-
-.input-container {
-  display: flex;
-  gap: 10px;
-}
-
-.submit-btn {
-  align-self: flex-end;
+  & /deep/ pre {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  & /deep/ blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 15px;
+    color: #777;
+  }
 }
 </style>
