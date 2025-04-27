@@ -2,7 +2,7 @@
   <el-container class="main">
       <el-aside width="200px" style="height: auto;">
         <h1>历史纪录：</h1>
-        <ul v-if="history">
+        <ul v-if="history.length > 0">
           <li v-for="item in history" :key="item.id">
             <el-button type="text" @click="handleHistoryClick(item)">
               {{ item.title }}
