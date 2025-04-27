@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 ### **项目名称：智能个人知识库管理系统（Smart Personal Knowledge Base）**
 **一句话需求**：基于本地大模型构建一个私有化、支持自然语言交互的智能知识管理系统，帮助用户高效整理、检索和延展个人文档/笔记。
@@ -87,3 +88,7 @@ D-->F[Embedding模型(sentence-transformers)]
 ---
 
 
+=======
+# personal-AI-tools
+personal AI tools(only try) 
+>>>>>>> ce7bb10ec7131f0fd483dbfc90f7b6a37f76ec7a
